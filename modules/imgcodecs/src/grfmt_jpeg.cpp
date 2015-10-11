@@ -177,6 +177,7 @@ JpegDecoder::JpegDecoder()
     m_state = 0;
     m_f = 0;
     m_buf_supported = true;
+    m_orientation = JPEG_ORIENTATION_TL;
 }
 
 
@@ -218,6 +219,7 @@ bool  JpegDecoder::readHeader()
 
     JpegState* state = new JpegState;
     m_state = state;
+    m_orientation = getOrientation();
     state->cinfo.err = jpeg_std_error(&state->jerr.pub);
     state->jerr.pub.error_exit = error_exit;
 
@@ -257,6 +259,54 @@ bool  JpegDecoder::readHeader()
         close();
 
     return result;
+}
+
+int JpegDecoder::getOrientation()
+{
+	return JPEG_ORIENTATION_TL;
+}
+
+void JpegDecoder::setOrientation(Mat& img)
+{
+    Mat dst = img.clone();
+    switch(m_orientation)
+    {
+        case    JPEG_ORIENTATION_TL: //0th row == visual top, 0th column == visual left-hand side
+            dst = img.clone();
+            break;
+        case    JPEG_ORIENTATION_TR: //0th row == visual top, 0th column == visual right-hand side
+            dst = img.clone();
+            flip(dst, dst, 1);
+            break;
+        case    JPEG_ORIENTATION_BR: //0th row == visual bottom, 0th column == visual right-hand side
+            dst = img.clone();
+            flip(dst, dst, 1);
+            flip(dst, dst, 0);
+            break;
+        case    JPEG_ORIENTATION_BL: //0th row == visual bottom, 0th column == visual left-hand side
+            dst = img.clone();
+            flip(dst, dst, 0);
+            break;
+        case    JPEG_ORIENTATION_LT: //0th row == visual left-hand side, 0th column == visual top
+            transpose(img, dst);
+            break;
+        case    JPEG_ORIENTATION_RT: //0th row == visual right-hand side, 0th column == visual top
+            transpose(img, dst);
+            flip(dst, dst, 1);
+            break;
+        case    JPEG_ORIENTATION_RB: //0th row == visual right-hand side, 0th column == visual bottom
+            transpose(img, dst);
+            flip(dst, dst, 1);
+            flip(dst, dst, 0);
+            break;
+        case    JPEG_ORIENTATION_LB: //0th row == visual left-hand side, 0th column == visual bottom
+            transpose(img, dst);
+            flip(dst, dst, 1);
+            break;
+        default:
+            break;
+    }
+    img = dst.clone();
 }
 
 /***************************************************************************
@@ -472,8 +522,10 @@ bool  JpegDecoder::readData( Mat& img )
                         icvCvt_CMYK2Gray_8u_C4C1R( buffer[0], 0, data, 0, cvSize(m_width,1) );
                 }
             }
+
             result = true;
             jpeg_finish_decompress( cinfo );
+            setOrientation(img);
         }
     }
 

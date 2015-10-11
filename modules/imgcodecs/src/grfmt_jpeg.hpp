@@ -53,6 +53,22 @@
 namespace cv
 {
 
+//Picture orientation which may be taken from JPEG's EXIF
+//Orientation usually matters when the picture is taken by
+//smartphone or other camera with orientation sensor support
+//Corresponds to EXIF 2.3 Specification
+enum JpegOrientation
+{
+    JPEG_ORIENTATION_TL = 1, //0th row == visual top, 0th column == visual left-hand side
+    JPEG_ORIENTATION_TR = 2, //0th row == visual top, 0th column == visual right-hand side
+    JPEG_ORIENTATION_BR = 3, //0th row == visual bottom, 0th column == visual right-hand side
+    JPEG_ORIENTATION_BL = 4, //0th row == visual bottom, 0th column == visual left-hand side
+    JPEG_ORIENTATION_LT = 5, //0th row == visual left-hand side, 0th column == visual top
+    JPEG_ORIENTATION_RT = 6, //0th row == visual right-hand side, 0th column == visual top
+    JPEG_ORIENTATION_RB = 7, //0th row == visual right-hand side, 0th column == visual bottom
+    JPEG_ORIENTATION_LB = 8  //0th row == visual left-hand side, 0th column == visual bottom
+};
+
 class JpegDecoder : public BaseImageDecoder
 {
 public:
@@ -70,6 +86,12 @@ protected:
 
     FILE* m_f;
     void* m_state;
+
+private:
+
+    int m_orientation;
+    int getOrientation();
+    void setOrientation(Mat& img);
 };
 
 
